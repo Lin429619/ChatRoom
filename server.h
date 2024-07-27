@@ -1,0 +1,35 @@
+#ifndef SERVER_H
+#define SERVER_H
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/shm.h>
+#include <iostream>
+#include <thread>
+#include <vector>
+#include <mysql/mysql.h>
+using namespace std;
+
+class server {
+    private:
+        int server_port;
+        int server_sockfd;
+        string server_ip;
+        static vector<bool> sock_arr;
+    public:
+        server(int port, string ip);
+        ~server();
+        void run();
+        static void RecvMsg(int coon);
+        static void HandleRequest(int conn, string ip);
+        //待补充
+};
+
+#endif
