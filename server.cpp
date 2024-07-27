@@ -1,17 +1,38 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <sys/shm.h>
-#include <iostream>
-using namespace std;
+#include "server.h"
 
-int main()
+void server::RecvMsg(int conn){
+    //负责接收的缓冲区
+    char buffer[1024];
+    //不断接收数据
+    while(1){
+        memset(buffer, 0, sizeof(buffer));
+        int len = recv(conn, buffer, sizeof(buffer), 0);
+        //客户端发送exit或者异常节结束时，退出循环
+        if(strcmp(buffer, "exit") == 0 || len <= 0){
+            close(conn);
+            sock_arr[conn] = false;
+            break;
+        }
+        cout << "收到套接字描述符为" << conn << "发来的信息：" << buffer << endl;
+        string str(buffer);
+        HandleRequest(conn ,str);
+    }
+}
+
+void server::HandleRequest(int conn, string str){
+    char buffer[1024];
+    string name, pwd;
+    
+    //连接MYAQL数据库,并初始化
+    MYSQL *con = mysql_init(NULL);
+    mysql_real_connect(con, "127.0.0.1", "root", "ChatProject",
+     0, NULL, CLIENT_MULTI_STATEMENTS);
+
+    
+    
+}
+
+/* int main()
 {
     int server_sockfd = socket(AF_INET,SOCK_STREAM, 0);
 
@@ -64,4 +85,4 @@ int main()
     close(conn);
     close(server_sockfd);
     return 0;
-}
+} */
