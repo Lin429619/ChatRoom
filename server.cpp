@@ -29,6 +29,19 @@ void server::HandleRequest(int conn, string str){
      0, NULL, CLIENT_MULTI_STATEMENTS);
 
     
+    if(str.find("name:")! = str.npos){
+        int p1 = str.find("name:");
+        int p2=str.find("pwd:");
+        name = str.substr(p1 + 5, p2 - 5);
+        pwd = str.substr(p2 + 5, str.length() - p2 - 4);
+        string search = "INSERT INTO USER VALUES (\"";
+        search += name;
+        search += "\",\"";
+        search += pwd;
+        search += "\");";
+        cout << "sql语句:" << search << endl << endl;
+        mysql_query(con,search.c_str());
+    }
     
 }
 
