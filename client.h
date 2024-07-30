@@ -26,6 +26,8 @@ class client{
         client(int port, string ip);
         ~client();
         void run();
+        static void SendMsg(int conn);
+        static void RecvMsg(int conn);
         void HandleClient(int conn);
         //待补充
 
