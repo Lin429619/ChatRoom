@@ -27,6 +27,33 @@ void client::run(){
     return ;
 }
 
+void client::SendMsg(int conn) {
+    while(1) {
+        string str;
+        cin >> str;
+        //发送消息
+        str = "content:" + str;
+        int ret = send(conn, str.c_str(), str.length(), 0); //发送
+        //输入exit或者对端关闭时结束
+        if(str == "content:exit" || ret <= 0) 
+            break;
+    }
+}
+
+ void client::RecvMsg(int conn){
+    //接收缓冲区
+    char buffer[1024];
+    //不断接收数据
+    while(1) {
+        memset(buffer, 0, sizeof(buffer));
+        int len = recv(conn, buffer, sizeof(buffer), 0);
+        //recv返回值小于等于0,退出
+        if(len <= 0) 
+            break;
+        cout << buffer << endl;
+    }
+}
+
 void client::HandleClient(int conn){
     int choice;
     string name, pwd, pwd1;
@@ -143,7 +170,8 @@ void client::HandleClient(int conn){
         }
     }
     //登录成功
-    if(if_login) {
+    while(if_login && 1) {
+        if(if_login) {
         system("clear"); //清空界面
         cout << "        欢迎进入聊天室，" << login_name << "~~" << endl;
         cout << " -------------------------------------------\n";
@@ -154,13 +182,43 @@ void client::HandleClient(int conn){
         cout << "|              0.退出                       |\n";
         cout << "|                                           |\n";
         cout << " ------------------------------------------- \n\n";
+        }
+        cin >> choice;
+        if(choice == 0) {
+            break;
+        }
+        //私聊
+        if (choice == 1) {
+            cout << "请输入对方的用户名：";
+            string target_name, content;
+            cin >> target_name;
+            string sendstr("targhet:" + target_name + "from:" + login_name);
+            send(sock, sendstr.c_str(), sendstr.length(), 0); //向服务器发送信息
+            cout << "请输入你想说的话(输入exit退出):\n";
+            thread t1(client::SendMsg, conn); //创建发送线程
+            thread t2(client::RecvMsg, conn); //创建接收线程
+            t1.join();
+            t2.join();
+        }
     }
+    close(sock);
 }
 
 int main(){
     client clnt (8023, "127.0.0.1");
     clnt.run();
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
