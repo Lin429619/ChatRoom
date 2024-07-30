@@ -1,9 +1,13 @@
 #include "server.h"
 
 vector<bool> server::sock_arr(10000, false);
+unordered_map<string, int> server::name_sock_map; //名字和套接字描述符
+pthread_mutex_t server::name_sock_mutex; //互斥锁，锁住需要修改name_sock_map的临界区
 
 //构造函数
-server::server(int port,string ip):server_port(port),server_ip(ip){}
+server::server(int port,string ip):server_port(port),server_ip(ip) {
+    pthread_mutex_init(&name_sock_mutex, NULL); //创建互斥锁
+}
 
 //析构函数
 server::~server(){
@@ -51,6 +55,12 @@ void server::run(){
 }
 
 void server::RecvMsg(int conn){
+    tuple<bool, string, string, int>info; 
+    //元组类型，四个成员分别为if_login,login_name,target_name,target_conn
+
+    get<0>(info) = false; //把if_login设置为false
+    get<3>(info) = -1;    //把target_conn设置为-1
+
     //负责接收的缓冲区
     char buffer[1024];
 
@@ -66,15 +76,18 @@ void server::RecvMsg(int conn){
         }
         cout << "收到套接字描述符为" << conn << "发来的信息：" << buffer << endl;
         string str(buffer);
-        HandleRequest(conn, str);
+        HandleRequest(conn, str, info);
     }
 }
 
-void server::HandleRequest(int conn, string str){
+void server::HandleRequest(int conn, string str, tuple<bool, string, string, int>&info){
     char buffer[1024];
     string name, pwd;
-    bool if_login = false; //记录当前服务对象是否登录成功
-    string login_name = name; //记录当前服务对象的名字
+    //提取参数
+    bool if_login = get<0>(info); //记录当前服务对象是否登录成功
+    string login_name = get<1>(info); //记录当前服务对象的名字
+    string target_name = get<2>(info); //记录目标对象的名字
+    int target_conn = get<3>(info); //目标对象的套接字描述符
 
     //连接MYAQL数据库,并初始化
     MYSQL *con = mysql_init(NULL);
@@ -100,6 +113,7 @@ void server::HandleRequest(int conn, string str){
         cout << "sql语句:" << search << endl << endl;
         mysql_query(con, search.c_str());
     }
+
     //登录
     else if(str.find("login:") != str.npos) {
         int p1 = str.find("login:");
@@ -141,6 +155,7 @@ void server::HandleRequest(int conn, string str){
             send(conn, str1, strlen(str1), 0);
         }
     }
+
     //注销
     else if(str.find("logout:") != str.npos) {
         int p1 = str.find("logout:");
@@ -163,12 +178,35 @@ void server::HandleRequest(int conn, string str){
             send(conn, str1, strlen(str1), 0); 
         }
     }
+
+    //设定目标的文件描述符
+    else if(str.find("target:") != str.npos) {
+        int pos1 = str.find("from:");
+        string target = str.substr(7, pos1 - 7);
+        string from = str.substr(pos1 + 5);
+        target_name = target;
+        //找不到目标用户
+        if(name_sock_map.find(target) == name_sock_map.end())
+            cout << "源用户为" << login_name << ",目标用户" << target_name << "尚未登录，无法发起私聊\n";
+        //找到目标用户
+        else {
+            cout << "源用户" << login_name << "向目标用户" << target_name << "发起的私聊即将建立";
+            cout << ",目标用户的套接字描述符为" << name_sock_map[target] << endl;
+            target_conn = name_sock_map[target];
+        }
+    }
+    //接收到消息，转发
+    
 }
 
 int main(){
     server serv(8023, "127.0.0.1");  //传入端口号和ip作为构造函数参数
     serv.run();  //启动服务
 }
+
+
+
+
 
 
 
