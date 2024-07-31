@@ -192,7 +192,7 @@ void client::HandleClient(int conn){
             cout << "请输入对方的用户名：";
             string target_name, content;
             cin >> target_name;
-            string sendstr("targhet:" + target_name + "from:" + login_name);
+            string sendstr("target:" + target_name + "from:" + login_name);
             send(sock, sendstr.c_str(), sendstr.length(), 0); //向服务器发送信息
             cout << "请输入你想说的话(输入exit退出):\n";
             thread t1(client::SendMsg, conn); //创建发送线程
