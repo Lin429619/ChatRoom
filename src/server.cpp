@@ -197,7 +197,7 @@ void server::HandleRequest(int conn, string str, tuple<bool, string, string, int
     }
     //接收到消息，转发
     else if(str.find("content:") != str.npos) {
-        if(target_conn = -1) {
+        if(target_conn == -1) {
             cout << "找不到目标用户" << target_name << "的套接字，将尝试重新寻找目标用户的套接字\n";
             if(name_sock_map.find(target_name) != name_sock_map.end()) {
                 target_conn = name_sock_map[target_name];
@@ -205,6 +205,7 @@ void server::HandleRequest(int conn, string str, tuple<bool, string, string, int
             }
             else {
                 cout << "查找仍然失败，转发失败！\n";
+                return ;
             }
         }
         string recv_str(str);
